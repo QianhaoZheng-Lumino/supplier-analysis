@@ -17,7 +17,8 @@ ADVANTAGE_HEADERS = ["排名", "酒店 ID", "酒店", "国家", "集团", "星�
 DIM_HEADERS = ["名称", "酒店数", "BKS", "TTV (CNY)", "ADR", "TTV 占比"]
 MEAL_HEADERS = ["餐型", "BKS", "TTV (CNY)", "ADR", "TTV 占比"]
 SPAN_HEADERS = ["区间", "BKS", "TTV (CNY)", "BKS 占比", "TTV 占比"]
-CLIENT_HEADERS = ["名称", "有产酒店", "BKS", "TTV (CNY)", "ADR", "BKS 占比", "TTV 占比"]
+CLIENT_HEADERS = ["Parent Client ID", "有产酒店", "BKS", "TTV (CNY)", "ADR", "BKS 占比", "TTV 占比"]
+CLIENT_ROW_HEADERS = ["Client ID", "Parent Client ID", "有产酒店", "BKS", "TTV (CNY)", "ADR", "BKS 占比", "TTV 占比"]
 
 
 def esc(value) -> str:
@@ -302,20 +303,23 @@ def span_table(rows: list[dict]) -> str:
     return table(SPAN_HEADERS, "\n".join(lines))
 
 
-def client_table(rows: list[dict], adr_base: float, caption: str) -> str:
+def client_table(rows: list[dict], adr_base: float, caption: str, with_parent: bool = False) -> str:
+    headers = CLIENT_ROW_HEADERS if with_parent else CLIENT_HEADERS
     if len(rows) > 15:
         raise SystemExit(f"客户表最多 15 行，当前 {len(rows)} 行")
     if not rows:
-        return table(CLIENT_HEADERS, missing_row(len(CLIENT_HEADERS)), caption)
+        return table(headers, missing_row(len(headers)), caption)
     lines = []
     for row in rows:
         adr = row.get("adr")
         hot = "hot" if adr is not None and adr_base and float(adr) >= adr_base * 3 else ""
         down = "down" if row.get("volume") else ""
+        identity = [td_text(row.get("name"))]
+        if with_parent:
+            identity.append(td_text(row.get("parent") or "（父客户为空）"))
         lines.append(
             "      <tr>"
-            + cells([
-                td_text(row.get("name")),
+            + cells(identity + [
                 td_num(num(row.get("hotels"))),
                 td_num(num(row.get("bks"))),
                 td_num(num(row.get("ttv"))),
@@ -325,7 +329,7 @@ def client_table(rows: list[dict], adr_base: float, caption: str) -> str:
             ])
             + "</tr>"
         )
-    return table(CLIENT_HEADERS, "\n".join(lines), caption)
+    return table(headers, "\n".join(lines), caption)
 
 
 def tech_table(rows: list[dict], caption: str) -> str:
@@ -408,7 +412,7 @@ def render(data: dict) -> str:
   <p class="subhead">{esc(client.get("subhead") or "来自客户维度表，只含当前账号能看到的客户。主报告不含客户下钻。")}</p>
   <h3>Client ID（Top 15）</h3>
   <p class="oneline">{esc(client.get("client_oneline") or "")}</p>
-  {client_table(client.get("clients") or [], adr_base, client.get("client_caption") or "")}
+  {client_table(client.get("clients") or [], adr_base, client.get("client_caption") or "", with_parent=True)}
   <h3>Parent ID（Top 15）</h3>
   <p class="oneline">{esc(client.get("parent_oneline") or "")}</p>
   {client_table(client.get("parents") or [], adr_base, client.get("parent_caption") or "")}

@@ -51,4 +51,4 @@ python scripts/render-report.py 数据稿.json -o 报告.html
 
 餐型行：`name`、`bks`、`ttv`、`adr`、`ttv_share`。入住晚数和提前天数行：`name`、`bks`、`ttv`、`bks_share`、`ttv_share`。
 
-客户和父客户行：`name`、`hotels`、`bks`、`ttv`、`adr`、`bks_share`、`ttv_share`。走量型的父客户行加 `"volume": true`，脚本把 BKS 占比标红。各最多 15 行。
+客户和父客户行：`name`、`hotels`、`bks`、`ttv`、`adr`、`bks_share`、`ttv_share`。客户行再加 `parent`，来自 `17-client.sql` 的 `parent_client_id`，空值写成「（父客户为空）」。父客户行不加 `parent`。走量型的父客户行加 `"volume": true`，脚本把 BKS 占比标红。各最多 15 行。

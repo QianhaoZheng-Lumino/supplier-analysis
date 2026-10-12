@@ -45,7 +45,7 @@ MCP：Cursor Settings → MCP，或自己的 `~/.cursor/mcp.json`。URL / `agent
 2. 用自己的 `agent_user_key`。不要把 `mcp.json` 或 key 写进本仓库、报告，或提交到 GitHub。
 3. 缺供应商或时间范围先问再查。三个阈值没提就用默认：资源优势方 10%，优势酒店 1.30 倍，独家 BKS ≥ 10。
 4. 一次 `execute_sql` 等于一个 `sql/` 文件。先 Read 原文，只替换占位符。查询只传 `sql`、`timeout_seconds`、`original_question`，不传 `tables`。`original_question` 原样传入用户本轮提问。
-5. 同一轮最多 5 条 `execute_sql`。`11`、`12`、`12b` 的超时用 300 秒，其余 120 秒。
+5. 每一波最多 5 条 `execute_sql`，返回后自己接着跑下一波，直到 HTML 和 Excel 都生成。不要因为满 5 条就停下来等用户。`11`、`12`、`12b` 的超时用 300 秒，其余 120 秒。
 6. HTML 只由 `python scripts/render-report.py` 生成。需要本机 Python 3。Excel 与 HTML 同名，在对话里给路径，不写进 HTML。
 7. 口径以 `SKILL.md` 为准，章节以 `docs/report.md` 为准，数据稿以 `docs/report-data.md` 为准。
 

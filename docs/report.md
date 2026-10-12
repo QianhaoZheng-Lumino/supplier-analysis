@@ -78,7 +78,7 @@ HTML 只放等级摘要，不放规则原文，也不用 `<details>`。规则原
 
 无权限则整章不出现，导轨也不留入口。客户查询带 `supplier_rebook_sequence = 1`。
 
-Client Top 15、Parent Top 15。列：ID、有产酒店、BKS、TTV、ADR、BKS 占比、TTV 占比。Parent 表注写 CR5、CR10。
+Client Top 15、Parent Top 15。Client 表的列是 Client ID、Parent Client ID、有产酒店、BKS、TTV、ADR、BKS 占比、TTV 占比。Parent 表的列是 Parent Client ID、有产酒店、BKS、TTV、ADR、BKS 占比、TTV 占比，表注写 CR5、CR10。
 
 `.summary` 三行：走量型、走利型、集中度。没有符合规则的类型就写「Top 15 里没有走量型」或「没有走利型」，不编一个。
 

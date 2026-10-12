@@ -1,6 +1,6 @@
 # SQL
 
-每份文件一次 `execute_sql`。同一轮最多 5 条。先 Read 该文件，再只替换下面列出的占位符。除占位符外，送出的语句与文件原文一致。不增删列、过滤或 `LIMIT`，不加 `left()`，不把两份文件拼进同一次调用。凭记忆重写的语句，即使结果看起来一样，也不能写入报告。开跑不探活；本轮第一条查询返回 500 时，才允许一次 `SELECT 1 LIMIT 1`。
+每份文件一次 `execute_sql`。每一波最多 5 条，返回后立刻开下一波，直到 HTML 和 Excel 都生成，不要停下来等用户。先 Read 该文件，再只替换下面列出的占位符。除占位符外，送出的语句与文件原文一致。不增删列、过滤或 `LIMIT`，不加 `left()`，不把两份文件拼进同一次调用。凭记忆重写的语句，即使结果看起来一样，也不能写入报告。开跑不探活；本轮第一条查询返回 500 时，才允许一次 `SELECT 1 LIMIT 1`。
 
 `{start}`、`{end}` 是 `YYYY-MM-DD`，`{end}` 是用户结束日的下一天。`{supplier_id}`、`{min_bks}` 是整数。`{advantage_ratio}` 默认 `0.30`。`{q}`、`{country_code}`、`{chain}` 来自查询结果或用户原文；含单引号就停，改要 SupplierID。
 
@@ -27,7 +27,7 @@
 | 16-others-country.sql | 只对达标国家 | data_ovs.supplier_analysis_order |
 | 16-others-chain.sql | 只对达标集团。Independent 不跑 | data_ovs.supplier_analysis_order |
 | 16-others-country-chain.sql | 只对达标的国家 × 集团。Independent 不跑 | data_ovs.supplier_analysis_order |
-| 17-client.sql | 同上；必须含 `supplier_rebook_sequence = 1`；500 则整章省略 | dwd.dwd_hotel_order_channel_supplier_booking_mf |
+| 17-client.sql | 同上；必须含 `supplier_rebook_sequence = 1`；按 client_id、parent_client_id 分组；500 则整章省略 | dwd.dwd_hotel_order_channel_supplier_booking_mf |
 | 18-client-total.sql | 同上，含 `supplier_rebook_sequence = 1` | dwd.dwd_hotel_order_channel_supplier_booking_mf |
 | 19-parent.sql | 同上，含 `supplier_rebook_sequence = 1` | dwd.dwd_hotel_order_channel_supplier_booking_mf |
 | 20-parent-total.sql | 同上，含 `supplier_rebook_sequence = 1`。CR5/CR10 的分母 | dwd.dwd_hotel_order_channel_supplier_booking_mf |
