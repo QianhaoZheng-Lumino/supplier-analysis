@@ -28,28 +28,31 @@ description: >-
 
 ## 执行顺序
 
-一次运行要自己跑完下面 9 步，直到 HTML 和 Excel 都交出来。每一波 `execute_sql` 最多 5 条，这一波的结果返回后立刻发下一波，不要停下来等用户说「继续」，也不要交半成品。Read 不计入这 5 条。开跑不探活。文件不删，总次数不因为分波减少：没有达标资源时 19 次，1943 在 2026-01-01 至 2026-09-30、阈值 10% 时 27 次。只有 data MCP 探活失败，才停下告诉用户。
+一次运行要自己跑完下面 6 步，直到 HTML 和 Excel 都交出来。每一波 `execute_sql` 最多 5 条，这一波的结果返回后立刻发下一波，不要停下来等用户说「继续」，也不要交半成品。Read 不计入这 5 条。开跑不探活。固定 13 次查询：`01` 或 `02`、`03-breakdowns`、`13-country-advantage`、`14-chain-advantage`、`17`、`18`、`19`、`20`、`21`、`22`、`23`、`11`、`12`。12 失败时再加一次 `12b`。次数不随达标国家或集团增加。只有 data MCP 探活失败，才停下告诉用户。
 
 ```
 进度:
 - [ ] 1. 01 或 02，锁定一个 supplier_id
-- [ ] 2. 03、04、05、06、07
-- [ ] 3. 08、09、10、13、14
-- [ ] 4. 17、18、19、20、21
-- [ ] 5. 22、11、12。12 失败时，下一轮先跑 12b
-- [ ] 6. 22 出现 CHECK_ACCOUNT_RULES 才跑 23。只对 13 里占比 ≥ 阈值的国家跑 15 和 16-others-country。只对 14 里占比 ≥ 阈值的集团跑 16-others-chain。每轮最多 5 条
-- [ ] 7. 只对 15 里占比 ≥ 阈值的国家 × 集团跑 16-others-country-chain。Independent 不跑。每轮最多 5 条
-- [ ] 8. 本地算占比、ADR、CR5/CR10、走量走利、L2L 摘要
-- [ ] 9. 按 docs/report-data.md 写数据稿 JSON，运行 scripts/render-report.py 生成 HTML，再写同名 Excel
+- [ ] 2. 03-breakdowns、17、18、19、20
+- [ ] 3. 13-country-advantage、14-chain-advantage、21
+- [ ] 4. 22、23、11、12。12 失败时，下一轮先跑 12b
+- [ ] 5. 本地算占比、ADR、CR5/CR10、走量走利、L2L 摘要。13、14 返回的行都已达到 `{share_threshold}`
+- [ ] 6. 按 docs/report-data.md 写数据稿 JSON，运行 scripts/render-report.py 生成 HTML，再写同名 Excel
 ```
 
-`11`、`12`、`12b` 不和 `03`–`10`、`13`、`14`、`17`–`21` 放在同一轮。客户四条（17–20）返回 500：整章省略，报告写「当前账号看不到客户数据」。不要换成别的表，不要留空表。
+`11`、`12`、`12b` 不和 `03-breakdowns`、`13-country-advantage`、`14-chain-advantage`、`17`–`21` 放在同一轮。`23` 和 `22`、`11`、`12` 同一轮发出，不要等 22 返回。22 里没有任何一级是 `CHECK_ACCOUNT_RULES` 时，23 的结果不写进报告。23 失败只让这一级的规则摘要写「未取得」，独家和优势保持已返回的结果。客户四条（17–20）返回 500：整章省略，报告写「当前账号看不到客户数据」。不要换成别的表，不要留空表。
 
-本轮第一条 `execute_sql` 返回 500：先跑 `SELECT 1 LIMIT 1`。探活也失败，这一轮停下，告诉用户 data MCP 不稳定。探活成功，只把失败的那一条用原文再跑一次。仍然失败，该块写「未取得」，数字留空。同轮已经有成功结果时不再探活，只重试失败的那一条。禁止写成 0，禁止用样例报告或上一次结果填，禁止改 SQL 后再试。查询只传 `sql`、`timeout_seconds`、`original_question`，不传 `tables`。[sql/README.md](sql/README.md) 里的「用到的表」只说明文件打哪张表。`timeout_seconds`：`11`、`12`、`12b` 用 300，其余 120。`original_question` 原样传入用户本轮提问。
+不要跑已被替代的旧文件：`03` 到 `10`、`13-share-country`、`14-share-chain`、`15`、`16-others-country`、`16-others-chain`、`16-others-country-chain`。
+
+`03-breakdowns` 用 `section` 拆开。`overview` 一行是四个 KPI。`chain` 最多 200 行，`country` 最多 100 行，`city` 最多 500 行，`rn` 是该段内部名次。主报告的集团、国家、城市仍只展示 Top 10、Top 10、Top 15，全量进 Excel。`meal` 的酒店数为空。`los` 和 `lt` 的酒店数、ADR 为空。
+
+`13-country-advantage` 和 `14-chain-advantage` 已经按 `{share_threshold}` 去掉未达标的国家、集团和国家×集团。返回的 `country`、`country_chain`、`chain` 全部写入资源优势方，不要再删，也不要补未返回的行。`country_other` 挂在对应国家下，`chain_other` 挂在对应集团下，`country_chain_other` 挂在对应的国家×集团下。占比用该行的 `self_ttv / market_ttv` 或 `other_ttv / market_ttv`。金额相同时，供应商取 ID 较小的一家，国家、集团、城市取名称字母序靠前的一个。Independent 不进集团。
+
+本轮第一条 `execute_sql` 返回 500：先跑 `SELECT 1 LIMIT 1`。探活也失败，这一轮停下，告诉用户 data MCP 不稳定。探活成功，只把失败的那一条用原文再跑一次。仍然失败，该块写「未取得」，数字留空。同轮已经有成功结果时不再探活，只重试失败的那一条。禁止写成 0，禁止用样例报告或上一次结果填，禁止改 SQL 后再试。查询只传 `sql`、`timeout_seconds`、`original_question`，不传 `tables`。[sql/README.md](sql/README.md) 里的「用到的表」只说明文件打哪张表。`timeout_seconds`：`11`、`12`、`12b` 用 300，`03-breakdowns`、`13-country-advantage`、`14-chain-advantage` 用 180，其余 120。`original_question` 原样传入用户本轮提问。
 
 ## 查询
 
-一次 `execute_sql` 等于一个 `sql/` 文件。发查询的同一轮先 Read 这个文件。`sql` 参数只能把这次 Read 到的原文里的占位符换成值，其余字符与文件一致。占位符只有 `{supplier_id}`、`{start}`、`{end}`、`{min_bks}`、`{advantage_ratio}`、`{q}`、`{country_code}`、`{chain}`。语句里不能出现 `--` 或 `#`。
+一次 `execute_sql` 等于一个 `sql/` 文件。发查询的同一轮先 Read 这个文件。`sql` 参数只能把这次 Read 到的原文里的占位符换成值，其余字符与文件一致。占位符只有 `{supplier_id}`、`{start}`、`{end}`、`{min_bks}`、`{advantage_ratio}`、`{share_threshold}`、`{q}`、`{country_code}`、`{chain}`。`{share_threshold}` 用资源优势方阈值，用户没提就写 `0.10`，不加引号。语句里不能出现 `--` 或 `#`。
 
 下面这些都不算在执行文件：凭记忆重写、把文件逻辑换一种写法、加 `left()`、改 `LIMIT`、增删列或过滤、把多个文件拼进一次调用、开跑先查 `SELECT 1`、查 `information_schema`。本轮第一条查询返回 500 时的 `SELECT 1 LIMIT 1` 是唯一例外。`12-advantage-detail.sql` 必须读文件再替换，不能另写一条「等价」语句。`23-l2l-rules.sql` 的 `range_json` 按文件原样返回；放不进摘要就写「规则原文过长，未逐条展开」，不能自行截断。同一轮最多 5 条 `execute_sql`。
 
@@ -113,3 +116,5 @@ Excel 与 HTML 同名，sheet：集团、星级、国家、城市、餐型、入
 - 主报告里做客户下钻
 - 把 data MCP 的密钥、`mcp.json` 或本机凭证写进技能、报告，或提交到 GitHub
 - 因为一波已经有 5 条查询就结束任务、交出半成品，或等用户说「继续」
+- 再跑 `03` 到 `10`、`13-share-country`、`14-share-chain`、`15`、`16-others-country`、`16-others-chain`、`16-others-country-chain`
+- 等 22 返回之后才发 23；或在没有 `CHECK_ACCOUNT_RULES` 的等级写入 23 的规则
